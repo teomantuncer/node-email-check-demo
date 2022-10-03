@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>Node Email Check demo page</title>
+	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css">
+</head>
+<body>
+<div class="container">
+	<div class="columns is-centered">
+		<div class="column is-6 pt-5">
+			<div class="field">
+				<label class="label">Email</label>
+				<div class="control">
+					<input class="input" name="email" type="email" placeholder="email@example.com">
+				</div>
+			</div>
+			<div class="field has-text-right">
+				<button class="button is-link sync-submit">Sync Check</button>
+				<button class="button is-link async-submit">Async Check</button>
+			</div>
+			<table class="table is-fullwidth is-hovered is-striped is-narrow">
+				<thead>
+					<tr>
+						<th>#</th>
+						<th>Email</th>
+						<th>Type</th>
+						<th class="status">Status</th>
+					</tr>
+				</thead>
+				<tbody></tbody>
+			</table>
+		</div>
+	</div>
+</div>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+	$tbody = document.querySelector('tbody')
+	function addHistory(email, type, status) {
+		const tdIndex = document.createElement('td')
+		tdIndex.innerText = ($tbody.children.length + 1).toString()
+		const tdEmail = document.createElement('td')
+		tdEmail.innerText = email
+		const tdType = document.createElement('td')
+		tdType.innerText = type
+		const tdStatus = document.createElement('td')
+		tdStatus.innerText = status
+		tdStatus.classList.add(status ? 'has-text-success' : 'has-text-danger')
+		const tr = document.createElement('tr')
+		tr.appendChild(tdIndex)
+		tr.appendChild(tdEmail)
+		tr.appendChild(tdType)
+		tr.appendChild(tdStatus)
+		$tbody.prepend(tr)
+	}
+	document.querySelector('.sync-submit')
+		.addEventListener('click', function (e) {
+			e.preventDefault()
+			let $email = document.querySelector('input[name="email"]')
+			if (!$email || !$email.value) {
+				return
+			}
+			const email = $email.value.trim()
+			$email.parentElement.classList.add('is-loading')
+			fetch('/sync-check', {
+				method: 'POST',
+				mode: 'cors',
+				cache: 'no-cache',
+				headers: {
+					'Accept': 'application/json',
+					'Content-Type': 'application/json'
+				},
+				body: JSON.stringify({
+					email
+				})
+			})
+				.then(async (response) => {
+					const body = await response.json()
+					addHistory(email, 'sync', body.isValid)
+					$email.value = ''
+				})
+				.finally(() => {
+					$email.parentElement.classList.remove('is-loading')
+				})
+		})
+	document.querySelector('.async-submit')
+		.addEventListener('click', function (e) {
+			e.preventDefault()
+			let $email = document.querySelector('input[name="email"]')
+			if (!$email || !$email.value) {
+				return
+			}
+			const email = $email.value.trim()
+			$email.parentElement.classList.add('is-loading')
+			fetch('/check', {
+				method: 'POST',
+				mode: 'cors',
+				cache: 'no-cache',
+				headers: {
+					'Accept': 'application/json',
+					'Content-Type': 'application/json'
+				},
+				body: JSON.stringify({
+					email
+				})
+			})
+				.then(async (response) => {
+					const body = await response.json()
+					addHistory(email, 'async', body.isValid)
+					$email.value = ''
+				})
+				.finally(() => {
+					$email.parentElement.classList.remove('is-loading')
+				})
+		})
+})
+</script>
+</body>
+</html>
